@@ -173,7 +173,11 @@ io.on('connection', (socket) => {
       
       // Tự động chuyển qua kết quả nếu tất cả đều nộp bài xong
       if (room.answeredCount >= Object.keys(room.players).length) {
-        forceShowResult(roomId);
+        io.to(room.hostId).emit('player-answered', { 
+          totalPlayers: Object.keys(room.players).length, 
+          answeredCount: room.answeredCount 
+        });
+        setTimeout(() => forceShowResult(roomId), 1500);
       } else {
         io.to(room.hostId).emit('player-answered', { 
           totalPlayers: Object.keys(room.players).length, 

@@ -131,7 +131,7 @@ export default function PlayerView() {
       </header>
       
       <main className="flex-1 flex flex-col items-center justify-center p-4">
-        <AnimatePresence mode="wait">
+        <AnimatePresence>
           
           {status === 'lobby' && (
             <motion.div key="lobby" initial={{scale:0.8, opacity:0}} animate={{scale:1, opacity:1}} className="text-center">
