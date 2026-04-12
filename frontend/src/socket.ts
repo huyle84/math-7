@@ -1,7 +1,7 @@
 import { io, Socket } from 'socket.io-client';
 
-// Kết nối động tới Backend (Cùng IP với Frontend nhưng PORT 3005)
-const URL = `http://${window.location.hostname}:3005`;
+// Kết nối động tới Backend (có thể cấu hình qua biến môi trường)
+const URL = import.meta.env.VITE_BACKEND_URL || `http://${window.location.hostname}:3005`;
 
 export const socket: Socket = io(URL, {
   autoConnect: true,

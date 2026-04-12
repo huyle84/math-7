@@ -18,8 +18,8 @@ export default function HostView() {
   const [correctOption, setCorrectOption] = useState<string>('');
   const [leaderboard, setLeaderboard] = useState<Player[]>([]);
   
-  // Local IP cho QR code
-  const joinUrl = `http://${window.location.hostname}:5173/play?room=${roomId}`;
+  // Local IP hoặc Domain thực tế cho QR code
+  const joinUrl = `${window.location.origin}/play?room=${roomId}`;
 
   useEffect(() => {
     socket.emit('host:create-room');
