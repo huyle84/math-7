@@ -50,7 +50,7 @@ export default function PlayerView() {
 
     socket.on('question-result', (res: any) => {
       if (res && res.playerRanks) {
-        setMyRank(res.playerRanks[socket.id] || 0);
+        setMyRank(res.playerRanks[socket.id as string] || 0);
         setTotalPlayers(res.totalPlayers || 0);
       }
       setStatus('result');
@@ -58,7 +58,7 @@ export default function PlayerView() {
 
     socket.on('game-over', (res: any) => {
       if (res && res.playerRanks) {
-        setMyRank(res.playerRanks[socket.id] || 0);
+        setMyRank(res.playerRanks[socket.id as string] || 0);
         setTotalPlayers(res.totalPlayers || 0);
       }
       setStatus('game_over');
