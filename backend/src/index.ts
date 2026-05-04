@@ -7,6 +7,10 @@ import { questions } from './questions';
 const app = express();
 app.use(cors());
 
+app.get('/', (req, res) => {
+  res.send('eSchool Math Backend is running perfectly! Socket.io is ready.');
+});
+
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
