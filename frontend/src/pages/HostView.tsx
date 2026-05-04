@@ -3,7 +3,9 @@ import { QRCodeSVG } from 'qrcode.react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { socket } from '../socket';
 import confetti from 'canvas-confetti';
-import { Users, Play, Trophy, ArrowRight } from 'lucide-react';
+import { Users, Play, Trophy, ArrowRight, Pause } from 'lucide-react';
+import 'katex/dist/katex.min.css';
+import Latex from 'react-latex-next';
 
 interface Player { id: string; name: string; score: number; }
 interface Question { id: string; question: string; timeLimit: number; image?: string; options: {id: string, text: string}[]; }
@@ -17,6 +19,7 @@ export default function HostView() {
   const [answeredCount, setAnsweredCount] = useState<number>(0);
   const [correctOption, setCorrectOption] = useState<string>('');
   const [leaderboard, setLeaderboard] = useState<Player[]>([]);
+  const [isPaused, setIsPaused] = useState<boolean>(false);
   
   // Local IP hoặc Domain thực tế cho QR code
   const joinUrl = `${window.location.origin}/play?room=${roomId}`;
@@ -37,6 +40,7 @@ export default function HostView() {
       setGameState('question');
       setTimeLeft(q.timeLimit);
       setAnsweredCount(0);
+      setIsPaused(false);
     });
 
     socket.on('player-answered', ({ answeredCount }) => {
@@ -55,6 +59,9 @@ export default function HostView() {
       triggerConfetti();
     });
 
+    socket.on('timer-paused', () => setIsPaused(true));
+    socket.on('timer-resumed', () => setIsPaused(false));
+
     return () => {
       socket.off('room-created');
       socket.off('update-players');
@@ -62,16 +69,18 @@ export default function HostView() {
       socket.off('player-answered');
       socket.off('question-result');
       socket.off('game-over');
+      socket.off('timer-paused');
+      socket.off('timer-resumed');
     };
   }, []);
 
   useEffect(() => {
     let timer: any;
-    if (gameState === 'question' && timeLeft > 0) {
+    if (gameState === 'question' && timeLeft > 0 && !isPaused) {
       timer = setTimeout(() => setTimeLeft(prev => prev - 1), 1000);
     }
     return () => clearTimeout(timer);
-  }, [gameState, timeLeft]);
+  }, [gameState, timeLeft, isPaused]);
 
   useEffect(() => {
     let audio: HTMLAudioElement | null = null;
@@ -90,6 +99,7 @@ export default function HostView() {
 
   const startGame = () => socket.emit('host:start-game', roomId);
   const nextQuestion = () => socket.emit('host:next-question', roomId);
+  const togglePause = () => socket.emit('host:toggle-pause', roomId);
 
   const triggerConfetti = () => {
     const duration = 3000;
@@ -107,8 +117,8 @@ export default function HostView() {
   return (
     <div className="min-h-screen bg-slate-100 flex flex-col font-sans overflow-hidden">
       {/* Header */}
-      <header className="bg-white shadow py-4 px-8 flex justify-between items-center border-b-4 border-ttu-gold">
-        <h1 className="text-3xl font-black text-slate-800">TTU <span className="text-ttu-gold">QUIZ</span></h1>
+      <header className="bg-white shadow py-4 px-8 flex justify-between items-center border-b-4 border-eschool-gold">
+        <h1 className="text-3xl font-black text-slate-800">eSchool <span className="text-eschool-gold">QUIZ</span></h1>
         <div className="flex items-center gap-4 bg-slate-100 px-4 py-2 rounded-full font-bold text-lg">
           PIN: <span className="text-3xl tracking-widest text-blue-600">{roomId}</span>
         </div>
@@ -130,7 +140,7 @@ export default function HostView() {
                 <div className="text-center w-full bg-slate-100 py-3 rounded-lg font-mono text-sm break-all mb-6">
                   {joinUrl}
                 </div>
-                <button onClick={startGame} disabled={players.length === 0} className="w-full py-4 bg-ttu-gold hover:bg-yellow-400 text-yellow-900 font-bold text-xl rounded-xl transition shadow flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                <button onClick={startGame} disabled={players.length === 0} className="w-full py-4 bg-eschool-gold hover:bg-yellow-400 text-yellow-900 font-bold text-xl rounded-xl transition shadow flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
                   <Play /> {players.length === 0 ? "Chờ người chơi..." : "Bắt đầu ngay"}
                 </button>
               </div>
@@ -159,14 +169,22 @@ export default function HostView() {
             <motion.div key="question" initial={{opacity:0, y:50}} animate={{opacity:1, y:0}} exit={{opacity:0, scale:0.9}} className="w-full max-w-5xl flex flex-col items-center h-full justify-between">
               
               <div className="w-full text-center bg-white p-12 rounded-3xl shadow-xl flex-1 flex items-center justify-center mb-8 relative overflow-hidden">
-                {/* Timer Circle */}
-                <div className="absolute -left-6 -top-6 w-24 h-24 bg-blue-600 rounded-full flex items-center justify-center shadow-lg border-4 border-white text-3xl font-black text-white z-20">
-                  {timeLeft}
+                {/* Timer Circle & Pause Button */}
+                <div className="absolute -left-6 -top-6 flex flex-col items-center gap-2 z-20">
+                  <div className="w-24 h-24 bg-blue-600 rounded-full flex items-center justify-center shadow-lg border-4 border-white text-3xl font-black text-white">
+                    {timeLeft}
+                  </div>
+                  <button 
+                    onClick={togglePause} 
+                    className="flex items-center gap-1 bg-white border-2 border-slate-200 shadow rounded-full px-4 py-1 text-slate-700 font-bold hover:bg-slate-50 transition ml-8 cursor-pointer"
+                  >
+                    {isPaused ? <><Play size={16}/> Tiếp</> : <><Pause size={16}/> Ngưng</>}
+                  </button>
                 </div>
                 {question.image && (
                   <img src={question.image} alt="Minh hoạ" className="absolute w-full h-full object-cover opacity-20 pointer-events-none z-0" />
                 )}
-                <h2 className="text-4xl md:text-5xl font-bold leading-tight text-slate-800 z-10">{question.question}</h2>
+                <h2 className="text-4xl md:text-5xl font-bold leading-tight text-slate-800 z-10"><Latex>{question.question}</Latex></h2>
               </div>
               
               <div className="w-full flex justify-end font-bold text-xl text-slate-500 mb-4 px-4">
@@ -177,7 +195,7 @@ export default function HostView() {
                 {question.options.map((opt, i) => (
                   <div key={opt.id} className={`${colors[i]} rounded-2xl flex items-center p-6 shadow-md text-white min-h-24`}>
                     <div className="w-12 h-12 bg-white/20 rounded flex shrink-0 items-center justify-center font-bold text-3xl mr-6">{opt.id}</div>
-                    <span className="text-xl md:text-3xl font-semibold leading-tight">{opt.text}</span>
+                    <span className="text-xl md:text-3xl font-semibold leading-tight"><Latex>{opt.text}</Latex></span>
                   </div>
                 ))}
               </div>
@@ -194,14 +212,14 @@ export default function HostView() {
                   {question.image && (
                     <img src={question.image} alt="Minh hoạ" className="absolute w-full h-full object-cover opacity-20 pointer-events-none z-0" />
                   )}
-                  <h2 className="text-2xl md:text-3xl font-bold text-slate-800 text-center z-10">{question.question}</h2>
+                  <h2 className="text-2xl md:text-3xl font-bold text-slate-800 text-center z-10"><Latex>{question.question}</Latex></h2>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:h-64 h-auto">
                   {question.options.map((opt, i) => {
                     const isCorrect = opt.id === correctOption;
                     return (
                       <div key={opt.id} className={`${colors[i]} ${!isCorrect && 'opacity-30'} rounded-2xl flex items-center p-4 shadow text-white transition-all`}>
-                        <span className="text-2xl font-bold">{opt.text}</span>
+                        <span className="text-2xl font-bold"><Latex>{opt.text}</Latex></span>
                       </div>
                     );
                   })}

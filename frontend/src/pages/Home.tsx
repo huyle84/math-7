@@ -14,9 +14,9 @@ export default function Home() {
         className="text-center mb-12"
       >
         <h1 className="text-5xl md:text-7xl font-black text-white mb-4 tracking-tight">
-          TTU <span className="text-ttu-gold">QUIZ</span>
+          eSchool <span className="text-eschool-gold">QUIZ</span>
         </h1>
-        <p className="text-xl text-slate-300">Trường Đại học Tân Tạo - Nơi khai phóng công dân toàn cầu </p>
+        <p className="text-xl text-slate-300">Trường eSchool - Ôn tập Toán 7</p>
       </motion.div>
 
       <div className="flex flex-col md:flex-row gap-6">

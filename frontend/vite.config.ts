@@ -10,7 +10,7 @@ export default defineConfig({
   ],
   server: {
     host: '0.0.0.0', // Listen on all IP addresses to allow mobile devices to connect
-    port: 5173,
+    port: 5174,
     strictPort: true,
   }
 })
